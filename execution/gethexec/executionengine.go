@@ -589,6 +589,7 @@ func (s *ExecutionEngine) sequenceTransactionsWithBlockMutex(header *arbostypes.
 	}
 	blockCalcTime := time.Since(startTime)
 	blockExecutionTimer.Update(blockCalcTime)
+
 	if len(hooks.TxErrors) != len(txes) {
 		return nil, fmt.Errorf("unexpected number of error results: %v vs number of txes %v", len(hooks.TxErrors), len(txes))
 	}
@@ -984,6 +985,18 @@ func (s *ExecutionEngine) digestMessageWithBlockMutex(msgIdxToDigest arbutil.Mes
 	}
 	blockCalcTime := time.Since(startTime)
 	blockExecutionTimer.Update(blockCalcTime)
+	switch {
+	case blockCalcTime > 4*time.Second:
+		log.Warn("Digest message with block took longer than 4s", "time", blockCalcTime, "blockNumber", block.Number())
+	case blockCalcTime > 2*time.Second:
+		log.Warn("Digest message with block took longer than 2s", "time", blockCalcTime, "blockNumber", block.Number())
+	case blockCalcTime > time.Second:
+		log.Warn("Digest message with block took longer than 1s", "time", blockCalcTime, "blockNumber", block.Number())
+	case blockCalcTime > 500*time.Millisecond:
+		log.Warn("Digest message with block took longer than 500ms", "time", blockCalcTime, "blockNumber", block.Number())
+	case blockCalcTime > 250*time.Millisecond:
+		log.Warn("Digest message with block took longer than 250ms", "time", blockCalcTime, "blockNumber", block.Number())
+	}
 
 	err = s.appendBlock(block, statedb, receipts, blockCalcTime)
 	if err != nil {
