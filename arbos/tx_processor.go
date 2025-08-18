@@ -45,6 +45,7 @@ type TxProcessor struct {
 	evm              *vm.EVM
 	CurrentRetryable *common.Hash
 	CurrentRefundTo  *common.Address
+	IsTimeBoosted    bool // whether this tx was submitted via timeboost/express lane
 
 	// Caches for the latest L1 block number and hash,
 	// for the NUMBER and BLOCKHASH opcodes.
@@ -55,6 +56,13 @@ type TxProcessor struct {
 func NewTxProcessor(evm *vm.EVM, msg *core.Message) *TxProcessor {
 	tracingInfo := util.NewTracingInfo(evm, msg.From, arbosAddress, util.TracingBeforeEVM)
 	arbosState := arbosState.OpenSystemArbosStateOrPanic(evm.StateDB, tracingInfo, false)
+	
+	// Check if the message has timeboost information
+	isTimeBoosted := false
+	if msg.TxRunContext != nil {
+		isTimeBoosted = msg.TxRunContext.IsTimeBoosted()
+	}
+	
 	return &TxProcessor{
 		msg:                 msg,
 		state:               arbosState,
@@ -67,9 +75,14 @@ func NewTxProcessor(evm *vm.EVM, msg *core.Message) *TxProcessor {
 		evm:                 evm,
 		CurrentRetryable:    nil,
 		CurrentRefundTo:     nil,
+		IsTimeBoosted:       isTimeBoosted,
 		cachedL1BlockNumber: nil,
 		cachedL1BlockHashes: make(map[uint64]common.Hash),
 	}
+}
+
+func (p *TxProcessor) SetTimeBoosted(isTimeBoosted bool) {
+	p.IsTimeBoosted = isTimeBoosted
 }
 
 func (p *TxProcessor) PushContract(contract *vm.Contract) {

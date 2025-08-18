@@ -193,7 +193,7 @@ func ProduceBlock(
 	hooks := NoopSequencingHooks(txes)
 
 	return ProduceBlockAdvanced(
-		message.Header, delayedMessagesRead, lastBlockHeader, statedb, chainContext, hooks, isMsgForPrefetch, runCtx,
+		message.Header, delayedMessagesRead, lastBlockHeader, statedb, chainContext, hooks, isMsgForPrefetch, runCtx, nil,
 	)
 }
 
@@ -207,6 +207,7 @@ func ProduceBlockAdvanced(
 	sequencingHooks *SequencingHooks,
 	isMsgForPrefetch bool,
 	runCtx *core.MessageRunContext,
+	timeboostedTxs map[common.Hash]struct{},
 ) (*types.Block, types.Receipts, error) {
 
 	arbState, err := arbosState.OpenSystemArbosState(statedb, nil, true)
@@ -358,6 +359,12 @@ func ProduceBlockAdvanced(
 
 			snap := statedb.Snapshot()
 			statedb.SetTxContext(tx.Hash(), len(receipts)) // the number of successful state transitions
+
+			// Set timeboost flag on the message context if this transaction is timeboosted
+			if timeboostedTxs != nil {
+				_, isTimeBoosted := timeboostedTxs[tx.Hash()]
+				runCtx.SetTimeBoosted(isTimeBoosted)
+			}
 
 			gasPool := gethGas
 			blockContext := core.NewEVMBlockContext(header, chainContext, &header.Coinbase)

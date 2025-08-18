@@ -578,6 +578,7 @@ func (s *ExecutionEngine) sequenceTransactionsWithBlockMutex(header *arbostypes.
 		hooks,
 		false,
 		core.NewMessageCommitContext(s.wasmTargets),
+		timeboostedTxs,
 	)
 	if err != nil {
 		return nil, err

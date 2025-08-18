@@ -653,6 +653,8 @@ func Precompiles() map[addr]ArbosPrecompile {
 	ArbNativeTokenManager.methodsByName["BurnNativeToken"].arbosVersion = params.ArbosVersion_41
 	insert(ArbNativeTokenManager.address, ArbNativeTokenManager)
 
+	insert(MakePrecompile(pgen.ArbTimeBoostMetaData, &ArbTimeBoost{Address: types.ArbTimeBoostAddress}))
+
 	return contracts
 }
 
